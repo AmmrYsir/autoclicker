@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
 import { invoke } from '@tauri-apps/api/core';
+import { register, unregister } from '@tauri-apps/plugin-global-shortcut';
 import Header from './components/Header.vue';
 import ClickInterval from './components/ClickInterval.vue';
 import MouseButton from './components/MouseButton.vue';
@@ -28,19 +29,54 @@ const toggleClicking = async () => {
   }
 };
 
-const handleKeyPress = (event: KeyboardEvent) => {
-  if (event.key === 'F8') {
-    event.preventDefault();
-    toggleClicking();
-  }
-};
+const HOTKEY = 'F8';
+const HOTKEY_COOLDOWN_MS = 300;
+let hotkeyCooling = false;
+let keyListener: ((event: KeyboardEvent) => void) | null = null;
 
-onMounted(() => {
-  window.addEventListener('keydown', handleKeyPress);
+onMounted(async () => {
+  let registered = false;
+
+  try {
+    await register(HOTKEY, () => {
+      if (hotkeyCooling) return; // ignore OS key repeat while held down
+      hotkeyCooling = true;
+      toggleClicking();
+      setTimeout(() => {
+        hotkeyCooling = false;
+      }, HOTKEY_COOLDOWN_MS);
+    });
+    registered = true;
+  } catch (err) {
+    console.warn('Global shortcut registration failed, falling back to window listener', err);
+  }
+
+  if (!registered) {
+    keyListener = (event: KeyboardEvent) => {
+      if (event.key === HOTKEY) {
+        event.preventDefault();
+        if (hotkeyCooling) return;
+        hotkeyCooling = true;
+        toggleClicking();
+        setTimeout(() => {
+          hotkeyCooling = false;
+        }, HOTKEY_COOLDOWN_MS);
+      }
+    };
+    window.addEventListener('keydown', keyListener);
+  }
 });
 
-onUnmounted(() => {
-  window.removeEventListener('keydown', handleKeyPress);
+onUnmounted(async () => {
+  try {
+    await unregister(HOTKEY);
+  } catch (err) {
+    console.warn('Failed to unregister global shortcut', err);
+  }
+
+  if (keyListener) {
+    window.removeEventListener('keydown', keyListener);
+  }
 });
 </script>
 
