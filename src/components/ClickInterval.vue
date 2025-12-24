@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { CONTAINER, TEXT, BUTTON, INPUT } from '../styles/classes';
 
 const clickInterval = defineModel<number>();
 
@@ -25,19 +25,19 @@ const handleIntervalInput = (event: Event) => {
 </script>
 
 <template>
-  <div class="mb-6 p-4 bg-slate-700/30 rounded-lg border border-slate-600/50">
-    <div class="flex items-center justify-between mb-3">
-      <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Click Interval</label>
+  <div :class="CONTAINER.section">
+    <div :class="[CONTAINER.flexRow, 'justify-between mb-3']">
+      <label :class="TEXT.label">Click Interval</label>
       <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
       </svg>
     </div>
-    <div class="flex items-center gap-2">
+    <div :class="[CONTAINER.flexRow, 'gap-2']">
       <button 
         @click="decrementInterval"
-        class="w-10 h-10 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-all duration-200 flex items-center justify-center"
+        :class="BUTTON.small"
       >
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg :class="BUTTON.iconSmall" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path>
         </svg>
       </button>
@@ -48,15 +48,15 @@ const handleIntervalInput = (event: Event) => {
           @input="handleIntervalInput"
           min="10"
           max="10000"
-          class="w-full bg-slate-900/50 text-white text-center text-2xl font-bold py-2 rounded-lg border border-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          :class="INPUT.number"
         />
         <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-500 font-medium uppercase">ms</span>
       </div>
       <button 
         @click="incrementInterval"
-        class="w-10 h-10 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-all duration-200 flex items-center justify-center"
+        :class="BUTTON.small"
       >
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg :class="BUTTON.iconSmall" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
         </svg>
       </button>

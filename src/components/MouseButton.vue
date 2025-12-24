@@ -1,15 +1,18 @@
 <script setup lang="ts">
+import { CONTAINER, TEXT } from '@/styles/classes';
+
 type ButtonType = 'Left' | 'Middle' | 'Right';
 
 const selectedButton = defineModel<ButtonType>();
+const BUTTONS = ['Left', 'Middle', 'Right'] as const;
 </script>
 
 <template>
-  <div class="mb-6 p-4 bg-slate-700/30 rounded-lg border border-slate-600/50">
-    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Mouse Button</label>
+  <div :class="CONTAINER.section">
+    <label :class="[TEXT.label, 'block mb-3']">Mouse Button</label>
     <div class="grid grid-cols-3 gap-2">
       <button
-        v-for="button in ['Left', 'Middle', 'Right'] as const"
+        v-for="button in BUTTONS"
         :key="button"
         @click="selectedButton = button"
         :class="[
