@@ -12,8 +12,12 @@ const clickInterval = ref(100);
 const selectedButton = ref<'Left' | 'Middle' | 'Right'>('Left');
 const isRunning = ref(false);
 const clickCount = ref(0);
+const isButtonDelayed = ref(false);
 
 let counterInterval: number | null = null;
+let buttonDelayTimeout: number | null = null;
+
+const BUTTON_DELAY_MS = 3000; // 3 second delay
 
 // Poll click count when running
 const startCounterPolling = () => {
@@ -45,6 +49,8 @@ watch(isRunning, (running) => {
 });
 
 const toggleClicking = async () => {
+  if (isButtonDelayed.value) return; // Ignore clicks during delay
+  
   if (isRunning.value) {
     await invoke('stop_clicking');
     isRunning.value = false;
@@ -56,6 +62,13 @@ const toggleClicking = async () => {
         button: selectedButton.value
       });
       isRunning.value = true;
+      
+      // Enable button delay to prevent autoclick on the button itself
+      isButtonDelayed.value = true;
+      if (buttonDelayTimeout) clearTimeout(buttonDelayTimeout);
+      buttonDelayTimeout = window.setTimeout(() => {
+        isButtonDelayed.value = false;
+      }, BUTTON_DELAY_MS);
     } catch (error) {
       console.error('Failed to start autoclicker:', error);
     }
@@ -103,6 +116,10 @@ onMounted(async () => {
 onUnmounted(async () => {
   stopCounterPolling();
   
+  if (buttonDelayTimeout) {
+    clearTimeout(buttonDelayTimeout);
+  }
+  
   try {
     await unregister(HOTKEY);
   } catch (err) {
@@ -124,7 +141,7 @@ onUnmounted(async () => {
     <div class="flex flex-col gap-2 flex-1">
       <ClickInterval v-model="clickInterval" />
       <MouseButton v-model="selectedButton" />
-      <StartButton :is-running="isRunning" @toggle="toggleClicking" />
+      <StartButton :is-running="isRunning" :is-delayed="isButtonDelayed" @toggle="toggleClicking" />
     </div>
 
     <!-- Hotkey at Bottom -->
