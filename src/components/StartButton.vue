@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { Play, Pause } from 'lucide-vue-next';
+
 interface Props {
   isRunning: boolean;
 }
@@ -26,12 +28,8 @@ const buttonClasses = (isRunning: boolean) => [
     @click="handleClick"
     :class="buttonClasses(isRunning)"
   >
-    <svg v-if="!isRunning" class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-      <path d="M8 5v14l11-7z"></path>
-    </svg>
-    <svg v-else class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-      <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"></path>
-    </svg>
+    <Play v-if="!isRunning" class="w-5 h-5" :fill="'currentColor'" />
+    <Pause v-else class="w-5 h-5" :fill="'currentColor'" />
     {{ isRunning ? 'STOP' : 'START' }}
   </button>
 </template>
