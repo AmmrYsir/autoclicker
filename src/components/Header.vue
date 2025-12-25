@@ -4,6 +4,7 @@ import { CONTAINER, TEXT, BADGE, COLORS } from '@/styles/classes';
 
 interface Props {
   isRunning: boolean;
+  clickCount: number;
 }
 
 defineProps<Props>();
@@ -17,8 +18,11 @@ defineProps<Props>();
     </div>
     <div :class="[CONTAINER.flexRow, 'gap-2']">
       <div :class="[BADGE.status, isRunning ? COLORS.running : COLORS.ready]"></div>
-      <span :class="[TEXT.labelSmall, 'text-emerald-400']">
+      <span :class="[TEXT.labelSmall, isRunning ? 'text-orange-400' : 'text-emerald-400']">
         {{ isRunning ? 'RUNNING' : 'READY' }}
+      </span>
+      <span v-if="isRunning" :class="[TEXT.labelSmall, 'text-slate-400 ml-2']">
+        | {{ clickCount.toLocaleString() }} clicks
       </span>
     </div>
   </div>

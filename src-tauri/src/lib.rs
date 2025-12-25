@@ -1,4 +1,4 @@
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::Mutex;
 use rdev::{simulate, Button, EventType};
 use std::thread;
@@ -14,6 +14,7 @@ const VALID_BUTTONS: [&str; 3] = ["Left", "Middle", "Right"];
 // Global state for autoclicker
 static IS_CLICKING: AtomicBool = AtomicBool::new(false);
 static CURRENT_BUTTON: Mutex<Option<String>> = Mutex::new(None);
+static CLICK_COUNT: AtomicU64 = AtomicU64::new(0);
 
 /// Validates and sanitizes the button input
 fn validate_button(button: &str) -> Result<Button, String> {
@@ -56,6 +57,9 @@ fn start_clicking(interval_ms: u64, button: String) -> Result<String, String> {
         return Err("Autoclicker is already running".to_string());
     }
     
+    // Reset click counter
+    CLICK_COUNT.store(0, Ordering::SeqCst);
+    
     // Store the button type with proper mutex handling
     match CURRENT_BUTTON.lock() {
         Ok(mut current_btn) => {
@@ -83,6 +87,10 @@ fn start_clicking(interval_ms: u64, button: String) -> Result<String, String> {
             if let Err(e) = simulate(&EventType::ButtonRelease(mouse_button)) {
                 eprintln!("Failed to release button: {:?}", e);
             }
+            
+            // Increment click counter
+            CLICK_COUNT.fetch_add(1, Ordering::SeqCst);
+            
             thread::sleep(release_duration);
         }
     });
@@ -119,6 +127,12 @@ fn is_clicking() -> bool {
     IS_CLICKING.load(Ordering::SeqCst)
 }
 
+/// Get the current click count
+#[tauri::command]
+fn get_click_count() -> u64 {
+    CLICK_COUNT.load(Ordering::SeqCst)
+}
+
 /// Get the current configuration status (for debugging)
 #[tauri::command]
 fn get_status() -> Result<String, String> {
@@ -139,7 +153,7 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
-        .invoke_handler(tauri::generate_handler![start_clicking, stop_clicking, is_clicking, get_status])
+        .invoke_handler(tauri::generate_handler![start_clicking, stop_clicking, is_clicking, get_click_count, get_status])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

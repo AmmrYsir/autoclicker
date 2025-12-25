@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, watch } from 'vue';
 import { invoke } from '@tauri-apps/api/core';
 import { register, unregister } from '@tauri-apps/plugin-global-shortcut';
 import Header from './components/Header.vue';
@@ -11,11 +11,44 @@ import Hotkey from './components/Hotkey.vue';
 const clickInterval = ref(100);
 const selectedButton = ref<'Left' | 'Middle' | 'Right'>('Left');
 const isRunning = ref(false);
+const clickCount = ref(0);
+
+let counterInterval: number | null = null;
+
+// Poll click count when running
+const startCounterPolling = () => {
+  if (counterInterval) return;
+  
+  counterInterval = window.setInterval(async () => {
+    try {
+      clickCount.value = await invoke<number>('get_click_count');
+    } catch (error) {
+      console.error('Failed to get click count:', error);
+    }
+  }, 100); // Update every 100ms
+};
+
+const stopCounterPolling = () => {
+  if (counterInterval) {
+    clearInterval(counterInterval);
+    counterInterval = null;
+  }
+};
+
+// Watch isRunning to start/stop polling
+watch(isRunning, (running) => {
+  if (running) {
+    startCounterPolling();
+  } else {
+    stopCounterPolling();
+  }
+});
 
 const toggleClicking = async () => {
   if (isRunning.value) {
     await invoke('stop_clicking');
     isRunning.value = false;
+    clickCount.value = 0; // Reset counter when stopped
   } else {
     try {
       await invoke('start_clicking', { 
@@ -68,6 +101,8 @@ onMounted(async () => {
 });
 
 onUnmounted(async () => {
+  stopCounterPolling();
+  
   try {
     await unregister(HOTKEY);
   } catch (err) {
@@ -83,7 +118,7 @@ onUnmounted(async () => {
 <template>
   <div class="h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6 flex flex-col gap-6 select-none">
     <!-- Header -->
-    <Header :is-running="isRunning" />
+    <Header :is-running="isRunning" :click-count="clickCount" />
 
     <!-- Main Content -->
     <div class="flex flex-col gap-2 flex-1">
